@@ -1,3 +1,9 @@
+"""Prototype AR assistant that overlays tutorial steps on a webcam feed.
+
+Por defecto, el asistente explica el editor de nodos de Blender, aunque acepta
+cualquier tema como argumento.
+"""
+
 import cv2
 import openai
 
@@ -24,7 +30,12 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="AR Tutorial Assistant")
-    parser.add_argument("topic", help="Program or topic to learn")
+    parser.add_argument(
+        "topic",
+        nargs="?",
+        default="Blender node editor",
+        help="Program or topic to learn (default: Blender node editor)",
+    )
     parser.add_argument("--api-key", required=True, help="OpenAI API key")
     args = parser.parse_args()
 
