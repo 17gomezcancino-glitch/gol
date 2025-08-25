@@ -1,7 +1,8 @@
 """Prototype AR assistant that overlays tutorial steps on a webcam feed.
 
 Por defecto, el asistente explica el editor de nodos de Blender, aunque acepta
-cualquier tema como argumento.
+cualquier tema como argumento. También es experto en FL Studio y puede guiarte
+para crear una canción desde cero.
 """
 
 import cv2
