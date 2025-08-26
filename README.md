@@ -13,3 +13,15 @@ python ar_tutorial.py "Nombre del Programa" --api-key TU_CLAVE  # Otro software
 ```
 
 Presiona `n` para el siguiente paso y `q` para salir.
+
+## Herramientas de audio
+
+El script `guitar_tuner.py` permite:
+
+* Afinar una guitarra en tiempo real (`tune`).
+* Analizar un archivo de audio para detectar si hay una guitarra, estimar el género y la tonalidad (`analyze`).
+
+```bash
+python guitar_tuner.py tune --duration 0.5
+python guitar_tuner.py analyze ejemplo.wav
+```
