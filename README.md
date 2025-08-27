@@ -51,7 +51,9 @@ pantalla) que refleja la luz y es parcialmente transparente. La nave se mueve
 por carriles con las flechas y cada disparo viaja por el mismo carril para
 alcanzar al enemigo más cercano. Los cubos azules descienden en oleadas que se
 mueven de lado a lado, bajan al tocar los bordes y duplican su número en cada
-nivel.
+nivel. Cada décimo nivel aparece un jefe: una gran pirámide fractal que ocupa
+varios carriles, dispara un cañón poderoso pero lento y requiere múltiples
+impactos para ser derrotada.
 
 ### Ejecución
 

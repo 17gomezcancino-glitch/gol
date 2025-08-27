@@ -51,8 +51,25 @@ class Bullet:
     target: Optional[Enemy]
 
 
+@dataclass
+class Boss:
+    x: float
+    y: float
+    size: float
+    hp: int
+    cooldown: float
+
+
+@dataclass
+class BossBullet:
+    lane: int
+    y: float
+
+
 bullets: List[Bullet] = []
 enemies: List[Enemy] = []
+boss: Optional[Boss] = None
+boss_bullets: List[BossBullet] = []
 fleet_offset = 0.0
 fleet_direction = 1
 wave = 1
@@ -107,6 +124,16 @@ def draw_pyramid(x, y, size):
                          ('v3f', verts), ('n3f', norms), ('c4f', colors))
 
 
+def draw_fractal_pyramid(x, y, size, level):
+    draw_pyramid(x, y, size)
+    if level <= 0:
+        return
+    s = size / 2
+    for dx in (-s / 2, s / 2):
+        for dy in (-s / 2, s / 2):
+            draw_fractal_pyramid(x + dx, y + dy, s, level - 1)
+
+
 def draw_cube(x, y, size, color):
     s = size / 2
     vertices = [
@@ -139,6 +166,13 @@ def on_draw():
     for e in enemies:
         x = lane_positions[e.lane] + fleet_offset
         draw_cube(x, e.y, player_size, (0.0, 0.0, 1.0, 1.0))
+    if boss:
+        glEnable(GL_LIGHTING)
+        draw_fractal_pyramid(boss.x, boss.y, boss.size, 1)
+        glDisable(GL_LIGHTING)
+        for bb in boss_bullets:
+            draw_cube(lane_positions[bb.lane], bb.y, player_size * 0.3,
+                      (1.0, 0.0, 0.0, 1.0))
 
 
 @window.event
@@ -162,9 +196,10 @@ def on_key_press(symbol, modifiers):
 
 
 def update(dt):
-    global fleet_offset, fleet_direction
+    global fleet_offset, fleet_direction, boss
     bullet_speed = 400
     fleet_speed = 60
+    boss_bullet_speed = 250
 
     # Actualizar balas
     for b in bullets[:]:
@@ -174,6 +209,12 @@ def update(dt):
         if b.target and b.y >= b.target.y:
             enemies.remove(b.target)
             bullets.remove(b)
+        elif boss and b.y >= boss.y:
+            boss.hp -= 1
+            bullets.remove(b)
+            if boss.hp <= 0:
+                boss = None
+                spawn_wave()
         elif b.y > window.height / 2:
             bullets.remove(b)
 
@@ -188,26 +229,47 @@ def update(dt):
             for e in enemies:
                 e.y -= player_size
 
-    # Nueva oleada cuando no quedan enemigos
-    if not enemies:
+    # Actualizar jefe
+    if boss:
+        boss.cooldown -= dt
+        if boss.cooldown <= 0:
+            boss_bullets.append(BossBullet(lane=player_lane, y=boss.y - boss.size))
+            boss.cooldown = 2.5
+    for bb in boss_bullets[:]:
+        bb.y -= boss_bullet_speed * dt
+        if bb.lane == player_lane and bb.y <= player_y + player_size:
+            print("Game Over")
+            pyglet.app.exit()
+        if bb.y < -window.height / 2:
+            boss_bullets.remove(bb)
+
+    # Nueva oleada cuando no quedan enemigos ni jefe
+    if not enemies and not boss:
         spawn_wave()
 
 
 def spawn_wave():
-    global wave, enemies, fleet_offset, fleet_direction
-    count = base_enemy_count * (2 ** (wave - 1))
-    rows = (count + num_lanes - 1) // num_lanes
-    y_start = window.height / 2 - player_size
+    global wave, enemies, fleet_offset, fleet_direction, boss
     enemies = []
-    n = 0
-    for r in range(rows):
-        for lane in range(num_lanes):
-            if n >= count:
-                break
-            enemies.append(Enemy(lane, y_start + r * player_size))
-            n += 1
     fleet_offset = 0.0
     fleet_direction = 1
+    if wave % 10 == 0:
+        boss = Boss(x=0.0,
+                    y=window.height / 2 - player_size,
+                    size=player_size * 3,
+                    hp=10,
+                    cooldown=1.0)
+    else:
+        count = base_enemy_count * (2 ** (wave - 1))
+        rows = (count + num_lanes - 1) // num_lanes
+        y_start = window.height / 2 - player_size
+        n = 0
+        for r in range(rows):
+            for lane in range(num_lanes):
+                if n >= count:
+                    break
+                enemies.append(Enemy(lane, y_start + r * player_size))
+                n += 1
     wave += 1
 
 
