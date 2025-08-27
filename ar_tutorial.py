@@ -38,11 +38,28 @@ def main():
         help="Program or topic to learn (default: Blender node editor)",
     )
     parser.add_argument("--api-key", required=True, help="OpenAI API key")
+    parser.add_argument(
+        "--mute",
+        action="store_true",
+        help="Disable voice output",
+    )
     args = parser.parse_args()
 
     assistant = AITutorialAssistant(api_key=args.api_key)
     cap = cv2.VideoCapture(0)
     step = 1
+    instruction = assistant.get_step(args.topic, step)
+    engine = None
+    if not args.mute:
+        try:
+            import pyttsx3
+        except ImportError as exc:
+            raise SystemExit(
+                "pyttsx3 is required for voice output. Install it with `pip install pyttsx3`."
+            ) from exc
+        engine = pyttsx3.init()
+        engine.say(instruction)
+        engine.runAndWait()
 
     if not cap.isOpened():
         raise SystemExit("Could not open webcam")
@@ -52,7 +69,6 @@ def main():
             ret, frame = cap.read()
             if not ret:
                 break
-            instruction = assistant.get_step(args.topic, step)
             cv2.putText(
                 frame,
                 instruction,
@@ -67,6 +83,10 @@ def main():
             key = cv2.waitKey(1) & 0xFF
             if key == ord("n"):
                 step += 1
+                instruction = assistant.get_step(args.topic, step)
+                if engine:
+                    engine.say(instruction)
+                    engine.runAndWait()
             elif key == ord("q"):
                 break
     finally:
