@@ -5,8 +5,11 @@ cualquier tema como argumento. También es experto en FL Studio y puede guiarte
 para crear una canción desde cero.
 """
 
+import time
+
 import cv2
 import openai
+import requests
 
 class AITutorialAssistant:
     """Simple assistant that fetches tutorial steps via the OpenAI API."""
@@ -43,6 +46,7 @@ def main():
     assistant = AITutorialAssistant(api_key=args.api_key)
     cap = cv2.VideoCapture(0)
     step = 1
+    max_attempts = 3
 
     if not cap.isOpened():
         raise SystemExit("Could not open webcam")
@@ -52,21 +56,44 @@ def main():
             ret, frame = cap.read()
             if not ret:
                 break
-            instruction = assistant.get_step(args.topic, step)
+            success = False
+            color = (0, 255, 0)
+            for attempt in range(1, max_attempts + 1):
+                try:
+                    instruction = assistant.get_step(args.topic, step)
+                    success = True
+                    break
+                except (
+                    openai.error.OpenAIError,
+                    requests.exceptions.RequestException,
+                ) as exc:
+                    wait_time = 2 ** attempt
+                    print(
+                        f"Error obteniendo el paso (intento {attempt}/{max_attempts}): {exc}."
+                    )
+                    time.sleep(wait_time)
+            else:
+                instruction = (
+                    "No se pudieron obtener instrucciones. "
+                    "Presiona 'n' para reintentar."
+                )
+                color = (0, 0, 255)
+                print(instruction)
             cv2.putText(
                 frame,
                 instruction,
                 (20, 40),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 1.0,
-                (0, 255, 0),
+                color,
                 2,
                 cv2.LINE_AA,
             )
             cv2.imshow("Tutorial", frame)
             key = cv2.waitKey(1) & 0xFF
             if key == ord("n"):
-                step += 1
+                if success:
+                    step += 1
             elif key == ord("q"):
                 break
     finally:
