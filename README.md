@@ -25,3 +25,38 @@ El script `guitar_tuner.py` permite:
 python guitar_tuner.py tune --duration 0.5
 python guitar_tuner.py analyze ejemplo.wav
 ```
+
+## Visualizador 3D básico
+
+El script `blender_viewer.py` abre una ventana 3D y rota un modelo exportado desde Blender en formato OBJ.
+
+### Requisitos
+
+```bash
+pip install pyglet
+```
+
+### Ejecución
+
+```bash
+python blender_viewer.py
+```
+
+Puedes reemplazar `assets/cube.obj` con tu propio modelo `.obj` generado en Blender.
+
+## Shooter 3D mínimo
+
+El script `pyramid_shooter.py` crea una pequeña pirámide de cristal (≈4 % de la
+pantalla) que refleja la luz y es parcialmente transparente. La nave se mueve
+por carriles con las flechas y cada disparo viaja por el mismo carril para
+alcanzar al enemigo más cercano. Los cubos azules descienden en oleadas que se
+mueven de lado a lado, bajan al tocar los bordes y duplican su número en cada
+nivel.
+
+### Ejecución
+
+```bash
+python pyramid_shooter.py
+```
+
+Controles: flechas para moverte y `espacio` para disparar.
