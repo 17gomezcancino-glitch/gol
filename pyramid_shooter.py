@@ -1,6 +1,8 @@
 import pyglet
 from pyglet.gl import *
 from pyglet.window import key
+from dataclasses import dataclass
+from typing import Optional, List
 
 """Shooter con pirámide de cristal.
 
@@ -34,8 +36,23 @@ player_x = lane_positions[player_lane]
 player_y = -window.height // 2 + player_size
 
 # --- Estado del juego ---
-bullets = []  # cada bala: {'lane': int, 'y': float, 'target': enemigo o None}
-enemies = []  # cada enemigo: {'lane': int, 'y': float}
+
+
+@dataclass
+class Enemy:
+    lane: int
+    y: float
+
+
+@dataclass
+class Bullet:
+    lane: int
+    y: float
+    target: Optional[Enemy]
+
+
+bullets: List[Bullet] = []
+enemies: List[Enemy] = []
 fleet_offset = 0.0
 fleet_direction = 1
 wave = 1
@@ -117,11 +134,11 @@ def on_draw():
     draw_pyramid(player_x, player_y, player_size)
     glDisable(GL_LIGHTING)
     for b in bullets:
-        draw_cube(lane_positions[b['lane']], b['y'], player_size * 0.2,
+        draw_cube(lane_positions[b.lane], b.y, player_size * 0.2,
                   (1.0, 1.0, 0.0, 1.0))
     for e in enemies:
-        x = lane_positions[e['lane']] + fleet_offset
-        draw_cube(x, e['y'], player_size, (0.0, 0.0, 1.0, 1.0))
+        x = lane_positions[e.lane] + fleet_offset
+        draw_cube(x, e.y, player_size, (0.0, 0.0, 1.0, 1.0))
 
 
 @window.event
@@ -135,13 +152,13 @@ def on_key_press(symbol, modifiers):
         player_x = lane_positions[player_lane]
     elif symbol == key.SPACE:
         target = None
-        for e in sorted((e for e in enemies if e['lane'] == player_lane and e['y'] > player_y),
-                        key=lambda e: e['y']):
+        for e in sorted((e for e in enemies if e.lane == player_lane and e.y > player_y),
+                        key=lambda e: e.y):
             target = e
             break
-        bullets.append({'lane': player_lane,
-                        'y': player_y + player_size,
-                        'target': target})
+        bullets.append(Bullet(lane=player_lane,
+                              y=player_y + player_size,
+                              target=target))
 
 
 def update(dt):
@@ -151,25 +168,25 @@ def update(dt):
 
     # Actualizar balas
     for b in bullets[:]:
-        b['y'] += bullet_speed * dt
-        if b['target'] not in enemies:
-            b['target'] = None
-        if b['target'] and b['y'] >= b['target']['y']:
-            enemies.remove(b['target'])
+        b.y += bullet_speed * dt
+        if b.target not in enemies:
+            b.target = None
+        if b.target and b.y >= b.target.y:
+            enemies.remove(b.target)
             bullets.remove(b)
-        elif b['y'] > window.height / 2:
+        elif b.y > window.height / 2:
             bullets.remove(b)
 
     # Movimiento de la flota
     if enemies:
         fleet_offset += fleet_direction * fleet_speed * dt
-        left = min(lane_positions[e['lane']] + fleet_offset for e in enemies)
-        right = max(lane_positions[e['lane']] + fleet_offset for e in enemies)
+        left = min(lane_positions[e.lane] + fleet_offset for e in enemies)
+        right = max(lane_positions[e.lane] + fleet_offset for e in enemies)
         if right > window.width / 2 - player_size or left < -window.width / 2 + player_size:
             fleet_direction *= -1
             fleet_offset += fleet_direction * fleet_speed * dt
             for e in enemies:
-                e['y'] -= player_size
+                e.y -= player_size
 
     # Nueva oleada cuando no quedan enemigos
     if not enemies:
@@ -187,7 +204,7 @@ def spawn_wave():
         for lane in range(num_lanes):
             if n >= count:
                 break
-            enemies.append({'lane': lane, 'y': y_start + r * player_size})
+            enemies.append(Enemy(lane, y_start + r * player_size))
             n += 1
     fleet_offset = 0.0
     fleet_direction = 1
