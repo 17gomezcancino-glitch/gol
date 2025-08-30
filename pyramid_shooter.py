@@ -11,6 +11,7 @@ Dispara hacia arriba por carriles; si hay un enemigo en el mismo carril, el
 disparo lo alcanza. Las oleadas de cubos azules descienden como en juegos
 clásicos: se mueven de lado a lado y, al tocar un borde, bajan una fila.
 Cada nueva oleada duplica el número de enemigos.
+Cada cuatro bajas el arma cambia, alternando entre disparo sencillo, triple y rápido.
 """
 
 window = pyglet.window.Window(800, 600, "Pyramid Shooter")
@@ -49,6 +50,8 @@ class Bullet:
     lane: int
     y: float
     target: Optional[Enemy]
+    speed: float
+    color: tuple
 
 
 @dataclass
@@ -74,6 +77,21 @@ fleet_offset = 0.0
 fleet_direction = 1
 wave = 1
 base_enemy_count = num_lanes
+weapon_index = 0
+kills = 0
+weapon_modes = [
+    {"name": "single", "offsets": [0], "speed": 400, "color": (1.0, 1.0, 0.0, 1.0)},
+    {"name": "spread", "offsets": [0, -1, 1], "speed": 400, "color": (1.0, 0.0, 1.0, 1.0)},
+    {"name": "rapid", "offsets": [0], "speed": 600, "color": (0.0, 1.0, 1.0, 1.0)},
+]
+
+
+def register_kill():
+    global kills, weapon_index
+    kills += 1
+    if kills % 4 == 0:
+        weapon_index = (weapon_index + 1) % len(weapon_modes)
+
 
 
 def setup_projection():
@@ -162,7 +180,7 @@ def on_draw():
     glDisable(GL_LIGHTING)
     for b in bullets:
         draw_cube(lane_positions[b.lane], b.y, player_size * 0.2,
-                  (1.0, 1.0, 0.0, 1.0))
+                  b.color)
     for e in enemies:
         x = lane_positions[e.lane] + fleet_offset
         draw_cube(x, e.y, player_size, (0.0, 0.0, 1.0, 1.0))
@@ -185,30 +203,37 @@ def on_key_press(symbol, modifiers):
         player_lane += 1
         player_x = lane_positions[player_lane]
     elif symbol == key.SPACE:
-        target = None
-        for e in sorted((e for e in enemies if e.lane == player_lane and e.y > player_y),
-                        key=lambda e: e.y):
-            target = e
-            break
-        bullets.append(Bullet(lane=player_lane,
-                              y=player_y + player_size,
-                              target=target))
+        mode = weapon_modes[weapon_index]
+        for off in mode["offsets"]:
+            lane = player_lane + off
+            if lane < 0 or lane >= num_lanes:
+                continue
+            target = None
+            for e in sorted((e for e in enemies if e.lane == lane and e.y > player_y),
+                            key=lambda e: e.y):
+                target = e
+                break
+            bullets.append(Bullet(lane=lane,
+                                  y=player_y + player_size,
+                                  target=target,
+                                  speed=mode["speed"],
+                                  color=mode["color"]))
 
 
 def update(dt):
     global fleet_offset, fleet_direction, boss
-    bullet_speed = 400
     fleet_speed = 60
     boss_bullet_speed = 250
 
     # Actualizar balas
     for b in bullets[:]:
-        b.y += bullet_speed * dt
+        b.y += b.speed * dt
         if b.target not in enemies:
             b.target = None
         if b.target and b.y >= b.target.y:
             enemies.remove(b.target)
             bullets.remove(b)
+            register_kill()
         elif boss and b.y >= boss.y:
             boss.hp -= 1
             bullets.remove(b)

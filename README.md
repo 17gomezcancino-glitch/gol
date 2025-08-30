@@ -53,7 +53,8 @@ alcanzar al enemigo más cercano. Los cubos azules descienden en oleadas que se
 mueven de lado a lado, bajan al tocar los bordes y duplican su número en cada
 nivel. Cada décimo nivel aparece un jefe: una gran pirámide fractal que ocupa
 varios carriles, dispara un cañón poderoso pero lento y requiere múltiples
-impactos para ser derrotada.
+impactos para ser derrotada. Además, cada cuatro enemigos abatidos el arma del
+jugador cambia, alternando entre disparo sencillo, triple y rápido.
 
 ### Ejecución
 
