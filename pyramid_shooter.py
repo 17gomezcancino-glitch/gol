@@ -12,6 +12,7 @@ disparo lo alcanza. Las oleadas de cubos azules descienden como en juegos
 clásicos: se mueven de lado a lado y, al tocar un borde, bajan una fila.
 Cada nueva oleada duplica el número de enemigos.
 Cada cuatro bajas el arma cambia, alternando entre disparo sencillo, triple y rápido.
+Cada enemigo abatido aumenta el poder del jugador, acelerando los disparos.
 """
 
 window = pyglet.window.Window(800, 600, "Pyramid Shooter")
@@ -79,6 +80,7 @@ wave = 1
 base_enemy_count = num_lanes
 weapon_index = 0
 kills = 0
+power_level = 0
 weapon_modes = [
     {"name": "single", "offsets": [0], "speed": 400, "color": (1.0, 1.0, 0.0, 1.0)},
     {"name": "spread", "offsets": [0, -1, 1], "speed": 400, "color": (1.0, 0.0, 1.0, 1.0)},
@@ -87,8 +89,9 @@ weapon_modes = [
 
 
 def register_kill():
-    global kills, weapon_index
+    global kills, weapon_index, power_level
     kills += 1
+    power_level += 1
     if kills % 4 == 0:
         weapon_index = (weapon_index + 1) % len(weapon_modes)
 
@@ -216,7 +219,7 @@ def on_key_press(symbol, modifiers):
             bullets.append(Bullet(lane=lane,
                                   y=player_y + player_size,
                                   target=target,
-                                  speed=mode["speed"],
+                                  speed=mode["speed"] + power_level * 20,
                                   color=mode["color"]))
 
 
